@@ -1,13 +1,17 @@
 /* ---------- Step metadata (1:1 with panels) ---------- */
 const stepsData = [
   { title:'The American Dream?',     type:'title',   correlation:0,     axisX:'' },
-  { title:'The Myth of Job Growth',  type:'scatter', correlation: 0.05, color:'#8b5a2b', axisX:'Job growth (%)' },
-  { title:"Higher Wages Aren't Enough", type:'scatter', correlation: 0.08, color:'#8b5a2b', axisX:'Wage growth (%)' },
+  { title:'The Rent Paradox',        type:'scatter', correlation: 0.44, color:'#8b5a2b', axisX:'Median rent ($)' },
+  { title:'Opportunity Bargains Exist', type:'scatter', correlation: 0.44, color:'#8b5a2b', axisX:'Median rent ($)' },
+  { title:'The Myth of Job Growth',  type:'scatter', correlation: 0.05, color:'#8b2e2e', axisX:'Job growth (%)' },
+  { title:"Higher Wages Aren't Enough", type:'scatter', correlation: 0.08, color:'#8b2e2e', axisX:'Wage growth (%)' },
+  { title:"GDP Doesn't Predict Mobility", type:'scatter', correlation: 0.12, color:'#8b2e2e', axisX:'GDP per capita ($)' },
   { title:'The Reality: Poverty Matters', type:'scatter', correlation:-0.55, color:'#8b2e2e', axisX:'Poverty rate (%)' },
   { title:'Education Opens Doors',   type:'scatter', correlation: 0.52, color:'#1a5f4a', axisX:'Adults with college degree (%)' },
   { title:'Family Stability',        type:'scatter', correlation: 0.48, color:'#1a5f4a', axisX:'Two-parent households (%)' },
   { title:'Environmental Justice',   type:'scatter', correlation:-0.42, color:'#8b2e2e', axisX:'PM2.5 (μg/m³)' },
-  { title:'Community Roots',         type:'scatter', correlation: 0.36, color:'#1a5f4a', axisX:'Homeownership (%)' }
+  { title:'Community Roots',         type:'scatter', correlation: 0.36, color:'#1a5f4a', axisX:'Homeownership (%)' },
+  { title:"Rent's Moderate Impact",  type:'scatter', correlation: 0.35, color:'#1a5f4a', axisX:'Rent level (percentile)' }
 ];
 
 /* ---------- SVG setup ---------- */
