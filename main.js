@@ -11,7 +11,7 @@ const stepsData = [
   { title:'Community Roots',         type:'scatter', correlation: 0.36, color:'#1a5f4a', axisX:'Homeownership (%)' },
   { title:'The Rent Paradox',        type:'scatter', correlation: 0.44, color:'#8b5a2b', axisX:'Median rent ($)' },
   { title:'Opportunity Bargains Exist', type:'scatter', correlation: 0.44, color:'#8b5a2b', axisX:'Median rent ($)' },
-  { title:"Rent's Moderate Impact",  type:'scatter', correlation: 0.35, color:'#1a5f4a', axisX:'Rent level (percentile)' }
+  { title:"Rent's Moderate Impact",  type:'scatter', correlation: 0.36, color:'#1a5f4a', axisX:'Rent level (percentile)' }
 ];
 
 /* ---------- SVG setup ---------- */
