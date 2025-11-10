@@ -13,9 +13,9 @@ const stepsData = [
   { title:'Opportunity Bargains Exist', type:'bubble', correlation: 0.44, color:'#8b5a2b', axisX:'Monthly Rent ($)' },
   { title:"Rent's Moderate Impact",  type:'scatter', correlation: 0.36, color:'#1a5f4a', axisX:'Rent level (percentile)' }
 ];
-
 /* ---------- SVG setup ---------- */
 const svg = d3.select("#viz-svg");
+const tip = d3.select('#tooltip');
 const margin = { top:80, right:60, bottom:70, left:70 };
 let width, height, chartWidth, chartHeight;
 
@@ -60,11 +60,13 @@ function mulberry32(seed){
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
+
 function hashInt(str){
   let h = 2166136261;
   for (let i=0; i<str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   return h|0;
 }
+
 function boxMuller(prng){
   const u1 = Math.max(Number.MIN_VALUE, prng());
   const u2 = prng();
@@ -72,6 +74,7 @@ function boxMuller(prng){
   const theta = 2 * Math.PI * u2;
   return R * Math.cos(theta);
 }
+
 function generateCorrelatedData(r, n, seed){
   const prng = mulberry32(seed);
   const X=[],Y=[];
@@ -92,12 +95,13 @@ function generateCorrelatedData(r, n, seed){
   const minY = Math.min(...Yz), maxY = Math.max(...Yz);
   const data = [];
   for (let i=0;i<n;i++){
-    const xScaled = ((Xz[i]-minX)/(maxX-minX))*100;     // [0,100]
-    const yScaled = ((Yz[i]-minY)/(maxY-minY))*120 - 60;// [-60,60]
+    const xScaled = ((Xz[i]-minX)/(maxX-minX))*100;
+    const yScaled = ((Yz[i]-minY)/(maxY-minY))*120 - 60;
     data.push({x:xScaled,y:yScaled});
   }
   return data;
 }
+
 function regressionLine(data){
   const n=data.length;
   let sumX=0,sumY=0,sumXY=0,sumX2=0;
@@ -438,7 +442,40 @@ function updateVisualization(stepIndex){
     .attr("cx", d => xScale(d.x)).attr("cy", d => yScale(d.y))
     .attr("r", 0)
     .style("fill", step.color).style("opacity", .55).style("stroke", step.color).style("stroke-width", 1.5);
-  dotsEnter.merge(dots)
+  
+  // Tooltip & hover for scatter dots
+  const fmtX = d3.format('.1f');
+  const fmtY = d3.format('.1f');
+  const xName = step.axisX || step.title;
+  const yName = "Economic Mobility Index";
+
+  const dotsMerge = dotsEnter.merge(dots)
+    .on('mouseenter', (event, p) => {
+      d3.select(event.currentTarget)
+        .attr('stroke-width', 3)
+        .style('opacity', 0.9);
+
+      tip
+        .style('display', 'block')
+        .html(
+          `<b>${xName}</b>: ${fmtX(p.x)}<br>` +
+          `<b>${yName}</b>: ${fmtY(p.y)}`
+        );
+    })
+    .on('mousemove', (event) => {
+      tip
+        .style('left', `${event.clientX}px`)
+        .style('top',  `${event.clientY}px`);
+    })
+    .on('mouseleave', (event) => {
+      d3.select(event.currentTarget)
+        .attr('stroke-width', 1.5)
+        .style('opacity', 0.55);
+
+      tip.style('display', 'none');
+    });
+
+  dotsMerge
     .transition().duration(700).delay((d,i)=>i*5)
     .attr("cx", d => xScale(d.x)).attr("cy", d => yScale(d.y))
     .attr("r", 5)
@@ -448,15 +485,13 @@ function updateVisualization(stepIndex){
 /* ---------- Robust step activation (IntersectionObserver) ---------- */
 const stepEls = Array.from(document.querySelectorAll('.step'));
 const io = new IntersectionObserver((entries)=>{
-  // pick the most visible intersecting step
   const visible = entries.filter(e => e.isIntersecting);
   if (visible.length === 0) return;
 
   visible.sort((a,b)=> b.intersectionRatio - a.intersectionRatio);
   const el = visible[0].target;
-  const idx = parseInt(el.dataset.step, 10); // 0..7 maps directly to stepsData[0..7]
+  const idx = parseInt(el.dataset.step, 10);
 
-  // toggle active classes
   stepEls.forEach(s => s.classList.toggle('active', s === el));
 
   if (idx !== currentStep) {
@@ -465,12 +500,11 @@ const io = new IntersectionObserver((entries)=>{
   }
 }, {
   root:null,
-  threshold:[0.55, 0.6, 0.65, 0.7, 0.75] // switch when step is mostly in view
+  threshold:[0.55, 0.6, 0.65, 0.7, 0.75]
 });
 
 stepEls.forEach(el => io.observe(el));
 
-// Hide viz entirely when no step is visible (e.g., outro fully on screen)
 function hideIfNoStepVisible(){
   const anyVisible = stepEls.some(el => {
     const r = el.getBoundingClientRect();
@@ -483,15 +517,12 @@ function hideIfNoStepVisible(){
 
 window.addEventListener('scroll', hideIfNoStepVisible, { passive:true });
 
-// Resize: recompute layout but DO NOT regenerate data
 window.addEventListener('resize', () => {
   updateDimensions();
   updateVisualization(currentStep >= 0 ? currentStep : 0);
   hideIfNoStepVisible();
 });
 
-// Init (keep viz hidden at start)
-currentStep = 0;            // first .step is the title card inside the stack
+currentStep = 0;
 updateVisualization(currentStep);
 hideIfNoStepVisible();
-

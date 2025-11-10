@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Economic Mobility: A Data Story</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3"></script> 
   <link rel="stylesheet" href="style.css">
 </head>
+<div id="tooltip" class="tooltip" role="status" aria-live="polite"></div>
 <body>
   <div class="intro">
     <div class="intro-content">
@@ -112,6 +114,40 @@
       <h2>Rent's Moderate Impact</h2>
       <p>Correlation: <span class="highlight">+0.36</span></p>
       <p>When we look at rent levels themselves, they show a <span class="highlight">moderate positive effect</span>—but far weaker than social factors like poverty concentration and education.</p>
+    </div>
+  </div>
+
+  <!-- Add these steps after step 11 and before the outro -->
+  <div class="step" data-step="12">
+    <div class="step-content">
+      <h2>Geography of Opportunity</h2>
+      <p>Economic mobility isn't evenly distributed across America. Some regions consistently produce better outcomes for children from low-income families.</p>
+      <p>Let's explore how <span class="highlight">where you grow up</span> shapes your economic future.</p>
+    </div>
+  </div>
+
+
+
+  <div class="step" data-step="13">
+    <div class="step-content">
+      <h2>The Green Connection</h2>
+      <p>Correlation: <span class="highlight">+0.31</span></p>
+      <p>Areas with more vegetation show <span class="highlight">moderately higher mobility</span>. The Mountain West shows dense vegetation coverage.</p>
+    </div>
+  </div>
+  
+  <div class="step" data-step="14">
+    <div class="step-content">
+      <h2>Mobility Across States</h2>
+      <p>Now examining economic mobility, we see the Mountain West and Upper Midwest show <span class="highlight">strong mobility outcomes</span>, while the Deep South shows lower mobility.</p>
+    </div>
+  </div>
+  
+  <div class="step" data-step="15">
+    <div class="step-content">
+      <h2>Regional Patterns Emerge</h2>
+      <p>When we see both maps together, the patterns become clear. The Deep South shows the opposite pattern—lower vegetation and lower mobility.</p>
+      <p>Geography reveals how <span class="highlight">environmental quality</span> and <span class="highlight">economic opportunity</span> often go hand in hand.</p>
     </div>
   </div>
   <div class="outro">

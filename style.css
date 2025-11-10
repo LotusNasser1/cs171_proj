@@ -304,3 +304,24 @@
       display: block;
     }
   }
+
+
+
+  /* --- Scatter tooltip --- */
+.tooltip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 999;
+  transform: translate(-50%, -120%);
+  background: #fffdf8;
+  border: 2px solid #8b5a2b;
+  padding: 8px 10px;
+  font-size: .95rem;
+  color: #2c1810;
+  box-shadow: 0 6px 18px rgba(0,0,0,.22);
+  display: none;
+  white-space: nowrap;
+}
+
+/* allow hover interactions over the viz area */
+#visualization { pointer-events: auto; }
