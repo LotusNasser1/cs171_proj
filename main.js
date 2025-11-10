@@ -13,8 +13,9 @@ const stepsData = [
   { title:'Opportunity Bargains Exist', type:'bubble', correlation: 0.44, color:'#8b5a2b', axisX:'Monthly Rent ($)' },
   { title:"Rent's Moderate Impact",  type:'scatter', correlation: 0.36, color:'#1a5f4a', axisX:'Rent level (percentile)' },
   { title:'Geography of Opportunity', type:'title', correlation:0, axisX:'' },
-  { title:'The Green Connection',   type:'maps',    correlation: 0.31, color:'#1a5f4a', axisX:'' },
-  { title:'Regional Patterns Emerge', type:'maps',  correlation: 0.31, color:'#1a5f4a', axisX:'' }
+  { title:'The Green Connection',   type:'single-map', correlation: 0.31, color:'#1a5f4a', mapType:'vegetation' },  // LARGE CENTERED VEGETATION MAP
+  { title:'Mobility Across States', type:'single-map', correlation: 0.31, color:'#1a5f4a', mapType:'mobility' },    // LARGE CENTERED MOBILITY MAP
+  { title:'Regional Patterns Emerge', type:'maps',  correlation: 0.31, color:'#1a5f4a', axisX:'' }  // Optional: keep or remove the side-by-side
 ];
 
 /* ---------- SVG setup ---------- */
@@ -152,6 +153,122 @@ function createBubbleData(seed){
   }
   
   return bubbles;
+}
+
+function drawSingleMap(mapType){
+  // Clear existing content
+  chartGroup.selectAll(".state-veg").remove();
+  chartGroup.selectAll(".state-mob").remove();
+  chartGroup.selectAll("g.veg-group").remove();
+  chartGroup.selectAll("g.mob-group").remove();
+  chartGroup.selectAll("g.single-map-group").remove();
+  
+  if (!mapData) {
+    console.log("Map data not loaded yet");
+    return;
+  }
+  
+  // Center single map with larger size
+  const mapWidth = chartWidth * 0.75;  // Use 75% of available width for big map
+  const mapHeight = chartHeight - 20;
+  
+  // Centered projection with bigger scale
+  const projection = d3.geoAlbersUsa()
+    .translate([mapWidth/2, mapHeight/2])
+    .scale(mapWidth * 1.6);  // Even larger scale for single map
+  
+  const pathGen = d3.geoPath(projection);
+  
+  // Choose color scale and data based on map type
+  const isVeg = mapType === 'vegetation';
+  const colorScale = isVeg ? 
+    d3.scaleSequential(d3.interpolateGreens) : 
+    d3.scaleSequential(d3.interpolateBlues);
+  
+  const dataMap = isVeg ? mapData.vegMap : mapData.mobMap;
+  const otherMap = isVeg ? mapData.mobMap : mapData.vegMap;
+  
+  const vals = Array.from(dataMap.values()).filter(Number.isFinite);
+  colorScale.domain([d3.min(vals), d3.max(vals)]);
+  
+  // Create centered map group
+  const mapGroup = chartGroup.append("g")
+    .attr("class", "single-map-group")
+    .attr("transform", `translate(${(chartWidth - mapWidth)/2}, 20)`);
+  
+  // Add title
+  mapGroup.append("text")
+    .attr("x", mapWidth/2)
+    .attr("y", -10)
+    .attr("text-anchor", "middle")
+    .style("font-size", "24px")
+    .style("font-family", "'Garamond','Georgia',serif")
+    .style("fill", "#2c1810")
+    .style("font-weight", "600")
+    .text(isVeg ? "Vegetation by State" : "Economic Mobility by State");
+  
+  // FIPS mapping
+  const FIPS2USPS = new Map([
+    [1,'AL'],[2,'AK'],[4,'AZ'],[5,'AR'],[6,'CA'],[8,'CO'],[9,'CT'],[10,'DE'],[11,'DC'],[12,'FL'],[13,'GA'],
+    [15,'HI'],[16,'ID'],[17,'IL'],[18,'IN'],[19,'IA'],[20,'KS'],[21,'KY'],[22,'LA'],[23,'ME'],[24,'MD'],
+    [25,'MA'],[26,'MI'],[27,'MN'],[28,'MS'],[29,'MO'],[30,'MT'],[31,'NE'],[32,'NV'],[33,'NH'],[34,'NJ'],
+    [35,'NM'],[36,'NY'],[37,'NC'],[38,'ND'],[39,'OH'],[40,'OK'],[41,'OR'],[42,'PA'],[44,'RI'],[45,'SC'],
+    [46,'SD'],[47,'TN'],[48,'TX'],[49,'UT'],[50,'VT'],[51,'VA'],[53,'WA'],[54,'WV'],[55,'WI'],[56,'WY']
+  ]);
+  const fips2code = id => FIPS2USPS.get(+id) || null;
+  
+  // Load and draw map
+  d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json').then(us => {
+    const states = topojson.feature(us, us.objects.states).features;
+    const mesh = topojson.mesh(us, us.objects.states, (a,b) => a !== b);
+    
+    mapGroup.selectAll('.state-path')
+      .data(states)
+      .join('path')
+      .attr('class', 'state-path')
+      .attr('d', pathGen)
+      .attr('fill', d => {
+        const v = dataMap.get(fips2code(d.id));
+        return Number.isFinite(v) ? colorScale(v) : '#ddd';
+      })
+      .attr('stroke', '#2c1810')
+      .attr('stroke-width', 0.7)
+      .attr('stroke-opacity', 0.5)
+      .style('opacity', 0)
+      .on('mouseenter', function(event, d) {
+        d3.select(this).attr('stroke-width', 2.5).attr('stroke-opacity', 0.9);
+        const code = fips2code(d.id);
+        const mainVal = dataMap.get(code);
+        const otherVal = otherMap.get(code);
+        const mainLabel = isVeg ? 'Vegetation' : 'Mobility';
+        const otherLabel = isVeg ? 'Mobility' : 'Vegetation';
+        const mainFmt = isVeg ? d3.format('.3f') : d3.format('.1f');
+        const otherFmt = isVeg ? d3.format('.1f') : d3.format('.3f');
+        
+        tip.style('display', 'block')
+          .html(`<b>${code}</b><br/>${mainLabel}: ${Number.isFinite(mainVal) ? mainFmt(mainVal) : 'N/A'}<br/>${otherLabel}: ${Number.isFinite(otherVal) ? otherFmt(otherVal) : 'N/A'}`);
+      })
+      .on('mousemove', event => {
+        tip.style('left', `${event.clientX}px`).style('top', `${event.clientY}px`);
+      })
+      .on('mouseleave', function() {
+        d3.select(this).attr('stroke-width', 0.7).attr('stroke-opacity', 0.5);
+        tip.style('display', 'none');
+      })
+      .transition().duration(700).delay((d,i) => i * 10)
+      .style('opacity', 1);
+    
+    // Add borders
+    mapGroup.append('path')
+      .attr('d', pathGen(mesh))
+      .attr('fill', 'none')
+      .attr('stroke', '#2c1810')
+      .attr('stroke-width', 1);
+      
+    console.log(`Single ${mapType} map drawn successfully`);
+  }).catch(err => {
+    console.error("Error loading US map data:", err);
+  });
 }
 
 /* ---------- Map data and setup ---------- */
@@ -385,6 +502,7 @@ function updateVisualization(stepIndex){
     chartGroup.selectAll(".state-mob").remove();
     chartGroup.selectAll("g.veg-group").remove();
     chartGroup.selectAll("g.mob-group").remove();
+    chartGroup.selectAll("g.single-map-group").remove();  // ADD THIS
     correlationText.transition().duration(200).style("opacity",0);
     xAxisGroup.transition().duration(200).style("opacity",0);
     yAxisGroup.transition().duration(200).style("opacity",0);
@@ -395,7 +513,39 @@ function updateVisualization(stepIndex){
 
   setVizVisible(true);
 
-  // Handle map type
+  // Handle single map type - MOVE THIS HERE, BEFORE OTHER HANDLERS
+  if (step.type === 'single-map'){
+    // Hide other elements
+    chartGroup.selectAll(".dot").transition().duration(300).attr("r",0).remove();
+    chartGroup.selectAll(".regression-line").transition().duration(300).style("opacity",0).remove();
+    chartGroup.selectAll(".bar").transition().duration(300).attr("height",0).remove();
+    chartGroup.selectAll(".bar-label").transition().duration(300).style("opacity",0).remove();
+    chartGroup.selectAll(".bubble").transition().duration(300).attr("r",0).remove();
+    chartGroup.selectAll(".quadrant-line").transition().duration(300).style("opacity",0).remove();
+    chartGroup.selectAll("g.veg-group").remove();
+    chartGroup.selectAll("g.mob-group").remove();
+    
+    // Hide axes and labels
+    xAxisGroup.transition().duration(300).style("opacity",0);
+    yAxisGroup.transition().duration(300).style("opacity",0);
+    xLabel.transition().duration(300).style("opacity",0);
+    yLabel.transition().duration(300).style("opacity",0);
+    
+    // Show correlation
+    const corrStr = step.correlation >= 0 ? `+${step.correlation.toFixed(2)}` : step.correlation.toFixed(2);
+    correlationText
+      .transition().duration(450)
+      .style("opacity",1)
+      .style("fill", step.color)
+      .attr("x", chartWidth/2)
+      .text(`r = ${corrStr}`);
+    
+    // Draw single map
+    drawSingleMap(step.mapType);
+    return;
+  }
+
+  // Handle dual maps type
   if (step.type === 'maps'){
     // Hide other elements
     chartGroup.selectAll(".dot").transition().duration(300).attr("r",0).remove();
@@ -404,6 +554,7 @@ function updateVisualization(stepIndex){
     chartGroup.selectAll(".bar-label").transition().duration(300).style("opacity",0).remove();
     chartGroup.selectAll(".bubble").transition().duration(300).attr("r",0).remove();
     chartGroup.selectAll(".quadrant-line").transition().duration(300).style("opacity",0).remove();
+    chartGroup.selectAll("g.single-map-group").remove();  // ADD THIS
     
     // Hide axes and labels for maps
     xAxisGroup.transition().duration(300).style("opacity",0);
@@ -436,8 +587,10 @@ function updateVisualization(stepIndex){
     chartGroup.selectAll(".state-mob").transition().duration(300).style("opacity",0).remove();
     chartGroup.selectAll("g.veg-group").remove();
     chartGroup.selectAll("g.mob-group").remove();
+    chartGroup.selectAll("g.single-map-group").remove();  // ADD THIS
     
     const barData = createBarData();
+    
     
     // Set up scales for bars
     const xBarScale = d3.scaleBand()
